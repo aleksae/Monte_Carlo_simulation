@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВС4-Алекса Ерић 2020/0304</title>
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+</head>
+<body class="me-3 ms-3">
+    <header>
+        <h4>Поставка проблема:</h4>Првих 100 имена на списку предствљају студенте ЕТФ, а од 101. до 250. су студенти
+Машинског факултета. Написати програм за случајан узорак од 20 студената, који на
+излазу даје редне бројеве изабраних студената, број изабраних студената са ЕТФ и са
+Машинског факултета и одговарајућу пропорцију. Предвидети опцију понављања
+описаног експеримента n пута. Приказати резултате за неколико вредности n и
+приказати како се мења пропорција у зависности од n. Да ли су резултати симулације у
+складу са очекиваном пропорцијом?
+    </header>
+    <hr>
+    <main>
+        
+        <div class="d-none alert alert-danger" id="greska">
+            Није дозвољено више од милијарду итерација!
+        </div>
+
+        <div class="d-inline-flex">
+            Унос броја понављања:<input class="form-control me-3" type="number" min="1" id="br_pon">
+            <div class="form-check me-2">
+                <input class="form-check-input" type="checkbox" value="true" id="usporeno">
+                <label class="form-check-label" for="usporeno">
+                    Успорено извршавање
+                </label>
+              </div>
+            
+            <button class="btn btn-primary" onclick="simuliraj()">
+                <div class="spinner-border d-none" role="status" id="spin" >
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+               <span id="sim" >Симулирај</span></button>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-7">
+            
+            Студенти ЕТФ-а:
+            <div class="row">
+                <div class="col text-success" id="red_1">
+
+                </div>
+                </div>
+                <div class="row">
+                <div class="col text-success" id="red_2">
+
+                </div>
+            </div>
+            Студенти Машинског факултета:
+            <div class="row">
+                <div class="col text-warning" id="red_3">
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col text-warning" id="red_4">
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col text-warning" id="red_5">
+
+                </div>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="card" style="width: 15rem;">
+                    
+                    <div class="card-body">
+                      <h5 class="card-title">Статистика</h5>
+                     
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Број итерација: <span id='cnt'></span></li>
+                      
+                      </ul>
+                    <ul class="list-group list-group-flush">
+                      <li class="list-group-item">ЕТФ просек: <span id='etf_stat'></span></li>
+                      <li class="list-group-item">Машинац просек: <span id='masinac_stat'></span></li>
+                    </ul>
+                   
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">ЕТФ текућа: <span id='etf_stat_t'></span></li>
+                        <li class="list-group-item">Машинац текућа: <span id='masinac_stat_t'></span></li>
+                      </ul>
+                      <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Пропорција: <span id='proporcija'></span></li>
+                      
+                      </ul>
+                    
+                  </div>
+                  
+                
+              </div>
+              <div class="col-2" >
+                <div id="izvestaj"  style="word-wrap: break-word;">
+
+                </div>
+                <button onclick="prikazi_jos()" id="jos" style='display:none;'>Још</button>
+            </div>
+            </div>
+           
+        </div>
+            
+
+        
+    </main>
+    <footer></footer>
+    <script>
+        for(let i=1; i<6;i++){
+            const boxWrapper = document.getElementById("red_"+i);
+            for(let j=0; j<50;j++){
+                const box = document.createElement("span");
+                box.innerHTML = '<svg id="'+i+'-'+j+'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16"> <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>';
+                boxWrapper.appendChild(box);
+            }
+        }
+    </script>
+    <script>
+        const br_iter_po_ponavljanju = 20;
+        let prikazi_konkretne = 0;
+        let data_to_print = []
+        function prikazi_jos(){
+            let div = document.getElementById("izvestaj")
+            let granica = (data_to_print.length-prikazi_konkretne)<500 ? (data_to_print.length) : (prikazi_konkretne+500)
+            console.log(granica)
+            let z = 0
+            for(z=prikazi_konkretne; z<granica; z++){
+                div.innerHTML += data_to_print[z]
+            }
+            if(granica==data_to_print.length) document.getElementById("jos").style.display = "none"
+            prikazi_konkretne =z
+           
+        }
+        function jedno_biranje(){
+            let niz =[]
+            let etf=0; let masinac=0;
+            let etf_niz =[]; let mas_niz = []
+            for(let i=0; i<br_iter_po_ponavljanju; i++){
+                let rand = Math.floor(Math.random() * 250+1);
+                if(rand<=100) {
+                    etf++
+                    etf_niz.push(rand)
+                }
+                else {
+                    masinac++
+                    mas_niz.push(rand)
+                }
+                niz.push(rand)
+            }
+            return [etf, masinac, niz, etf_niz, mas_niz]
+        }
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        function skini_klase(){
+            for(let i=1; i<6;i++){
+                for(let j=0; j<50;j++){
+                    document.getElementById(i+"-"+j).classList.remove("text-danger")
+                }
+            }
+        }
+        function dodaj_klase(niz){
+            for(i=0; i<20; i++){
+                if(niz[i]<=50){
+                    document.getElementById('1'+"-"+(niz[i]-1-50*0)).classList.add("text-danger")
+                }else if(niz[i]<=100){
+                    document.getElementById('2'+"-"+(niz[i]-1-50*1)).classList.add("text-danger")
+                }else if(niz[i]<=150){
+                    document.getElementById('3'+"-"+(niz[i]-1-50*2)).classList.add("text-danger")
+                }
+                else if(niz[i]<=200){
+                    document.getElementById('4'+"-"+(niz[i]-1-50*3)).classList.add("text-danger")
+                }
+                else{
+                    document.getElementById('5'+"-"+(niz[i]-1-50*4)).classList.add("text-danger")
+                }
+            }
+        }
+        async function simuliraj(){
+            document.getElementById("jos").style.display="none"
+            prikazi_konkretne = 0
+            document.getElementById("greska").classList.add("d-none")
+            document.getElementById("sim").classList.add("d-none")
+            document.getElementById("spin").classList.remove("d-none")
+            await sleep(100);
+            let n = document.getElementById("br_pon").value;
+            if(n>100000000){
+                document.getElementById("greska").classList.remove("d-none")
+                document.getElementById("sim").classList.remove("d-none")
+                document.getElementById("spin").classList.add("d-none")
+                return;
+            }
+            let etf=0; let masinac=0;
+            var div = document.getElementById('izvestaj');
+            div.innerHTML = ""
+            data_to_print = []
+            setTimeout(async ()=>{
+            for(let i=0; i<n; i++){
+                
+                if(document.getElementById("usporeno").checked) {skini_klase()}
+                let res = jedno_biranje();
+                etf+=res[0]
+                masinac+=res[1]
+          
+
+                data_to_print.push('<h6>Изабрани у рунди :'+(i+1)+'</h6>'+'Машинац:'+res[4].sort((a,b) => a-b)+'; ЕТФ:'+res[3].sort((a,b) => a-b))
+                if(document.getElementById("usporeno").checked || i%1000==0){
+                    skini_klase()
+                    dodaj_klase(res[2])
+
+                }
+                document.getElementById("cnt").innerHTML = i+1
+                if(document.getElementById("usporeno").checked) {
+                    //console.log("spavaj")
+                    await sleep(100);
+                }
+                
+                if(document.getElementById("usporeno").checked || i==(n-1) || i%1000==0){
+                    document.getElementById('etf_stat_t').innerHTML = res[0]
+                    document.getElementById('masinac_stat_t').innerHTML = res[1]
+                    document.getElementById('etf_stat').innerHTML = (etf/(i+1)).toFixed(2)
+                    document.getElementById('masinac_stat').innerHTML = (masinac/(i+1)).toFixed(2)
+                    document.getElementById('proporcija').innerHTML = (etf/(i+1)).toFixed(2)/(masinac/(i+1)).toFixed(2)
+                    if(i%1000==0) await sleep(50)
+                    skini_klase()
+                    for(let j=0; j<parseInt((etf/(i+1)));j++){
+                        document.getElementById(1+"-"+j).classList.add("text-danger")
+                    }
+                    for(let j=0; j<parseInt((masinac/(i+1)));j++){
+                        document.getElementById(3+"-"+j).classList.add("text-danger")
+                    }
+                  
+               
+                    
+                }
+               
+                
+            }
+            document.getElementById("jos").style.display="block"
+            document.getElementById("sim").classList.remove("d-none")
+            document.getElementById("spin").classList.add("d-none")
+            let granica = (data_to_print.length-prikazi_konkretne)<500 ? (data_to_print.length-prikazi_konkretne) : (prikazi_konkretne+500)
+            for(let z=prikazi_konkretne; z<granica; z++){
+                div.innerHTML += data_to_print[z]
+            }
+            if(granica<500) document.getElementById("jos").style.display = "none"
+            prikazi_konkretne+=granica
+            console.log("kraj")
+            },0)
+          
+            
+
+            
+        }
+    </script>
+</body>
+</html>
